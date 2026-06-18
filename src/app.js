@@ -12,8 +12,9 @@ const app = express();
 // ── Middlewares globaux ──────────────────────────────────────────
 app.use(cors({
   origin: [
-    process.env.FRONTEND_URL || 'http://localhost:3000',
-    'https://velocedoc.vercel.app',
+    process.env.FRONTEND_URL        || 'http://localhost:3000',
+    process.env.FRONTEND_URL_PUBLIC || 'https://veloce-doc.vercel.app',
+    'https://veloce-doc.vercel.app',
   ],
   credentials: true,
 }));
