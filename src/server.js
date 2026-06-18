@@ -1,20 +1,24 @@
 require('dotenv').config();
 const app = require('./app');
-const prisma = require('./lib/prisma');
 
-const PORT = process.env.PORT || 4000;
+// Export pour Vercel serverless
+module.exports = app;
 
-async function main() {
-  await prisma.$connect();
-  console.log('[DB] Connecté à Neon PostgreSQL');
+// Démarrage local uniquement (node src/server.js ou nodemon)
+if (require.main === module) {
+  const prisma = require('./lib/prisma');
+  const PORT = process.env.PORT || 4000;
 
-  app.listen(PORT, () => {
-    console.log(`[API] VeloceDoc backend démarré sur http://localhost:${PORT}`);
-    console.log(`[ENV] NODE_ENV = ${process.env.NODE_ENV}`);
-  });
+  prisma.$connect()
+    .then(() => {
+      console.log('[DB] Connecté à Neon PostgreSQL');
+      app.listen(PORT, () => {
+        console.log(`[API] VeloceDoc backend démarré sur http://localhost:${PORT}`);
+        console.log(`[ENV] NODE_ENV = ${process.env.NODE_ENV}`);
+      });
+    })
+    .catch((err) => {
+      console.error('[Fatal]', err);
+      process.exit(1);
+    });
 }
-
-main().catch((err) => {
-  console.error('[Fatal]', err);
-  process.exit(1);
-});
