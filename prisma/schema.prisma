@@ -1,0 +1,86 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+// ─── Énumérations ────────────────────────────────────────────────
+
+enum Plan {
+  GRATUIT
+  PRO
+  ENTREPRISE
+}
+
+// ─── User ────────────────────────────────────────────────────────
+
+model User {
+  id         String   @id @default(uuid())
+  email      String   @unique
+  password   String
+  nom        String
+  prenom     String
+  tel        String?
+  plan       Plan     @default(GRATUIT)
+  trialStart DateTime @default(now())
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  templates     Template[]
+  documents     DocumentGeneration[]
+  refreshTokens RefreshToken[]
+
+  @@index([email])
+}
+
+// ─── Template ────────────────────────────────────────────────────
+
+model Template {
+  id         String   @id @default(uuid())
+  userId     String
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name       String
+  blobUrl    String
+  blobKey    String
+  varsConfig Json
+  varsCount  Int
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  documents DocumentGeneration[]
+
+  @@index([userId])
+}
+
+// ─── DocumentGeneration ──────────────────────────────────────────
+
+model DocumentGeneration {
+  id         String    @id @default(uuid())
+  userId     String
+  user       User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  templateId String?
+  template   Template? @relation(fields: [templateId], references: [id], onDelete: SetNull)
+  varsCount  Int
+  isLimited  Boolean   @default(false)
+  fileName   String?
+  createdAt  DateTime  @default(now())
+
+  @@index([userId, createdAt])
+}
+
+// ─── RefreshToken ────────────────────────────────────────────────
+
+model RefreshToken {
+  id        String   @id @default(uuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  token     String   @unique
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+}

@@ -1,0 +1,147 @@
+# VeloceDoc — Admin API
+# Extension VS Code requise : REST Client (Huachao Mao)
+# 1. Envoyer la requête "Login admin" ci-dessous
+# 2. Copier le token reçu dans @adminToken
+# 3. Toutes les autres requêtes fonctionnent directement
+
+@baseUrl    = http://localhost:4000/api/admin
+@adminToken = eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJyb2xlIjoiYWRtaW4iLCJlbWFpbCI6InJhbnRzYWpvbmF0aGFuQGdtYWlsLmNvbSIsImlhdCI6MTc4MTc2OTA4MiwiZXhwIjoxNzgxNzk3ODgyfQ.Ujpn8u1711K5OoA2KYhayEom3LevmdIJTxdoKhvirxQ
+@userId     = REMPLACER_APRES_GET_USERS
+@templateId = REMPLACER_APRES_GET_TEMPLATES
+
+
+# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+# 1. LOGIN ADMIN
+# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+### Connexion administrateur (token valide 8h)
+POST {{baseUrl}}/login
+Content-Type: application/json
+
+{
+  "email":    "rantsajonathan@gmail.com",
+  "password": "77tzrDU5D"
+}
+
+###
+
+### Erreur — mauvais mot de passe
+POST {{baseUrl}}/login
+Content-Type: application/json
+
+{
+  "email":    "rantsajonathan@gmail.com",
+  "password": "mauvaismdp"
+}
+
+###
+
+### Erreur — accès route protégée sans token
+GET {{baseUrl}}/stats
+
+
+# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+# 2. STATISTIQUES GLOBALES
+# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+### Vue d'ensemble : utilisateurs / templates / documents
+GET {{baseUrl}}/stats
+Authorization: Bearer {{adminToken}}
+
+
+# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+# 3. GESTION DES UTILISATEURS
+# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+### Lister tous les utilisateurs (avec compteurs templates + docs)
+GET {{baseUrl}}/users
+Authorization: Bearer {{adminToken}}
+
+###
+
+### Détail d'un utilisateur (templates, 50 derniers docs, sessions actives, stats)
+GET {{baseUrl}}/users/{{userId}}
+Authorization: Bearer {{adminToken}}
+
+###
+
+### Passer un utilisateur en plan PRO
+PATCH {{baseUrl}}/users/{{userId}}/plan
+Authorization: Bearer {{adminToken}}
+Content-Type: application/json
+
+{
+  "plan": "PRO"
+}
+
+###
+
+### Passer un utilisateur en plan GRATUIT
+PATCH {{baseUrl}}/users/{{userId}}/plan
+Authorization: Bearer {{adminToken}}
+Content-Type: application/json
+
+{
+  "plan": "GRATUIT"
+}
+
+###
+
+### Passer un utilisateur en plan ENTREPRISE
+PATCH {{baseUrl}}/users/{{userId}}/plan
+Authorization: Bearer {{adminToken}}
+Content-Type: application/json
+
+{
+  "plan": "ENTREPRISE"
+}
+
+###
+
+### Révoquer toutes les sessions actives d'un utilisateur (déconnexion forcée)
+DELETE {{baseUrl}}/users/{{userId}}/sessions
+Authorization: Bearer {{adminToken}}
+
+###
+
+### Supprimer un utilisateur et TOUTES ses données (templates + blobs + docs + sessions)
+# ⚠ Action irréversible
+DELETE {{baseUrl}}/users/{{userId}}
+Authorization: Bearer {{adminToken}}
+
+
+# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+# 4. GESTION DES TEMPLATES (tous utilisateurs)
+# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+### Lister tous les templates de tous les utilisateurs
+GET {{baseUrl}}/templates
+Authorization: Bearer {{adminToken}}
+
+###
+
+### Supprimer n'importe quel template (supprime aussi le blob Vercel)
+# ⚠ Action irréversible
+DELETE {{baseUrl}}/templates/{{templateId}}
+Authorization: Bearer {{adminToken}}
+
+
+# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+# 5. HISTORIQUE DES DOCUMENTS GÉNÉRÉS
+# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+### Tous les documents générés (page 1, 50 par page)
+GET {{baseUrl}}/documents
+Authorization: Bearer {{adminToken}}
+
+###
+
+### Page 2 avec 20 résultats par page
+GET {{baseUrl}}/documents?page=2&limit=20
+Authorization: Bearer {{adminToken}}
+
+###
+
+### Page 1 avec 100 résultats (maximum)
+GET {{baseUrl}}/documents?limit=100
+Authorization: Bearer {{adminToken}}

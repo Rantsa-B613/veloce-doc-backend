@@ -1,0 +1,287 @@
+# VeloceDoc API — REST Client
+# Extension VS Code requise : REST Client (Huachao Mao)
+# Raccourci : cliquer "Send Request" au-dessus de chaque requête
+
+@baseUrl = http://localhost:4000/api
+@accessToken = REMPLACER_APRES_LOGIN
+@refreshToken = REMPLACER_APRES_LOGIN
+@templateId = REMPLACER_APRES_CREATION
+
+
+# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+# HEALTH CHECK
+# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+### Vérifier que le serveur tourne
+GET {{baseUrl}}/health
+
+
+# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+# AUTH — INSCRIPTION
+# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+### Créer un compte
+POST {{baseUrl}}/auth/register
+Content-Type: application/json
+
+{
+  "email":    "jonathan@alfa-partenaires.com",
+  "password": "77tzrDU5D",
+  "nom":      "Rantsa",
+  "prenom":   "Jonathan",
+  "tel":      "+33 6 12 34 56 78"
+}
+
+###
+
+### Créer un compte sans téléphone
+POST {{baseUrl}}/auth/register
+Content-Type: application/json
+
+{
+  "email":    "marie@velocedoc.com",
+  "password": "motdepasse456",
+  "nom":      "Martin",
+  "prenom":   "Marie"
+}
+
+###
+
+### Erreur — email déjà utilisé
+POST {{baseUrl}}/auth/register
+Content-Type: application/json
+
+{
+  "email":    "jean@velocedoc.com",
+  "password": "autremotdepasse",
+  "nom":      "Durand",
+  "prenom":   "Paul"
+}
+
+
+# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+# AUTH — CONNEXION
+# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+### Se connecter (copier accessToken + refreshToken dans les variables ci-dessus)
+POST {{baseUrl}}/auth/login
+Content-Type: application/json
+
+{
+  "email":    "jean@velocedoc.com",
+  "password": "monmotdepasse123"
+}
+
+###
+
+### Erreur — mauvais mot de passe
+POST {{baseUrl}}/auth/login
+Content-Type: application/json
+
+{
+  "email":    "jean@velocedoc.com",
+  "password": "mauvaismdp"
+}
+
+###
+
+### Erreur — email inexistant
+POST {{baseUrl}}/auth/login
+Content-Type: application/json
+
+{
+  "email":    "inconnu@velocedoc.com",
+  "password": "peu_importe"
+}
+
+
+# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+# AUTH — PROFIL & TOKEN
+# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+### Profil utilisateur connecté (stats + limites)
+GET {{baseUrl}}/auth/me
+Authorization: Bearer {{accessToken}}
+
+###
+
+### Rafraîchir le token d'accès
+POST {{baseUrl}}/auth/refresh
+Content-Type: application/json
+
+{
+  "refreshToken": "{{refreshToken}}"
+}
+
+###
+
+### Se déconnecter (révoque le refresh token)
+POST {{baseUrl}}/auth/logout
+Content-Type: application/json
+
+{
+  "refreshToken": "{{refreshToken}}"
+}
+
+###
+
+### Erreur — accès sans token
+GET {{baseUrl}}/auth/me
+
+
+# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+# TEMPLATES
+# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+### Lister tous mes templates
+GET {{baseUrl}}/templates
+Authorization: Bearer {{accessToken}}
+
+###
+
+### Sauvegarder un template (multipart — utiliser un vrai .docx en prod)
+# Note : pour tester avec un fichier réel, utiliser Postman ou Thunder Client
+POST {{baseUrl}}/templates
+Authorization: Bearer {{accessToken}}
+Content-Type: multipart/form-data; boundary=----Boundary
+
+------Boundary
+Content-Disposition: form-data; name="name"
+
+Contrat de mission 2025
+------Boundary
+Content-Disposition: form-data; name="varsCount"
+
+4
+------Boundary
+Content-Disposition: form-data; name="varsConfig"
+
+{"NOM_CLIENT":{"type":"TEXT"},"DATE_DEBUT":{"type":"DATE"},"MONTANT":{"type":"NUMBER"},"CONSULTANT":{"type":"TEXT"}}
+------Boundary
+Content-Disposition: form-data; name="file"; filename="contrat.docx"
+Content-Type: application/vnd.openxmlformats-officedocument.wordprocessingml.document
+
+< ./test-files/contrat.docx
+------Boundary--
+
+###
+
+### Renommer un template
+PUT {{baseUrl}}/templates/{{templateId}}
+Authorization: Bearer {{accessToken}}
+Content-Type: application/json
+
+{
+  "name": "Contrat de mission 2025 — Révisé"
+}
+
+###
+
+### Supprimer un template
+DELETE {{baseUrl}}/templates/{{templateId}}
+Authorization: Bearer {{accessToken}}
+
+###
+
+### Erreur — supprimer un template qui n'appartient pas à l'utilisateur
+DELETE {{baseUrl}}/templates/00000000-0000-0000-0000-000000000000
+Authorization: Bearer {{accessToken}}
+
+
+# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+# DOCUMENTS — ENREGISTRER UNE GÉNÉRATION
+# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+### Enregistrer une génération depuis un upload direct
+POST {{baseUrl}}/documents/generate
+Authorization: Bearer {{accessToken}}
+Content-Type: application/json
+
+{
+  "templateId": null,
+  "varsCount":  7,
+  "fileName":   "contrat_client_dupont.docx"
+}
+
+###
+
+### Enregistrer une génération depuis un template sauvegardé
+POST {{baseUrl}}/documents/generate
+Authorization: Bearer {{accessToken}}
+Content-Type: application/json
+
+{
+  "templateId": "{{templateId}}",
+  "varsCount":  4,
+  "fileName":   "mission_martin_juin2025.docx"
+}
+
+###
+
+### Générer 3 docs d'affilée pour tester la limite journalière (plan Gratuit = 3/jour)
+POST {{baseUrl}}/documents/generate
+Authorization: Bearer {{accessToken}}
+Content-Type: application/json
+
+{
+  "varsCount": 2,
+  "fileName":  "test_quota_1.docx"
+}
+
+###
+
+POST {{baseUrl}}/documents/generate
+Authorization: Bearer {{accessToken}}
+Content-Type: application/json
+
+{
+  "varsCount": 2,
+  "fileName":  "test_quota_2.docx"
+}
+
+###
+
+POST {{baseUrl}}/documents/generate
+Authorization: Bearer {{accessToken}}
+Content-Type: application/json
+
+{
+  "varsCount": 2,
+  "fileName":  "test_quota_3.docx"
+}
+
+###
+
+### 4ème génération — doit retourner 403 Quota dépassé (plan Gratuit)
+POST {{baseUrl}}/documents/generate
+Authorization: Bearer {{accessToken}}
+Content-Type: application/json
+
+{
+  "varsCount": 2,
+  "fileName":  "test_quota_4.docx"
+}
+
+
+# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+# STATS
+# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+### Récupérer les stats actuelles de l'utilisateur
+GET {{baseUrl}}/stats
+Authorization: Bearer {{accessToken}}
+
+
+# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+# EMAIL — TEST ENVOI
+# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+### Envoyer un email de bienvenue de test
+POST {{baseUrl}}/email/send-welcome
+Content-Type: application/json
+
+{
+  "email":    "jean@velocedoc.com",
+  "prenom":   "Jean",
+  "password": "monmotdepasse123"
+}
